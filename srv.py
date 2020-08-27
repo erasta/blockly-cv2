@@ -1,4 +1,4 @@
-from cStringIO import StringIO
+from io import StringIO
 import sys, socket, threading, time, datetime, os
 import cv2
 import numpy as np
@@ -23,14 +23,14 @@ def save(ext,environ):
         lr = postdata(environ).split("\n")
         name = lr[0]
         code = "\n".join(lr[1:])
-        try: os.mkdir("prj/"+name);
+        try: os.mkdir("prj/"+name)
         except: pass
         f = open("prj/"+name +"/code"+ext, "wb")
         f.write(code)
         f.close()
         return "saved ok."
-    except Exception,e:
-        print e
+    except Exception as e:
+        print (e)
         return str(e)
 
 def load(environ):
@@ -41,24 +41,24 @@ def load(environ):
         code = f.read()
         f.close()
     except IOError as e:
-        print e; 
+        print (e)
         return str(e)
     return code
 
 def application(environ, start_response):
-        
+
     url = environ['PATH_INFO'];
     data = ""
     if url == "/":
         url = "/Blockly.html"
     if url.startswith('/code'):
         sys.stdout = sys.stderr = mystdout = StringIO()
-        try:          
+        try:
             #MyThread(request_body).start()
             exec( compile( postdata(environ), "blockly", "exec" ) )
             data = mystdout.getvalue()
-        except Exception,e:
-            print e
+        except Exception as e:
+            print (e)
             data = str(e)
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
@@ -72,11 +72,11 @@ def application(environ, start_response):
         try:
             f = open(url[1:])
             data = f.read()
-            f.close()        
+            f.close()
         except: pass
     start_response( "200 OK", [ ("Content-Type", "text/html"), ("Content-Length", str(len(data))) ] )
-    return iter([data])
-    
+    return iter([data.encode("utf-8")])
+
 from wsgiref.simple_server import make_server
 httpd = make_server( '0.0.0.0', int(os.environ.get("PORT", 9000)), application )
 while True: httpd.handle_request()
